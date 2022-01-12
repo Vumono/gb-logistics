@@ -6,6 +6,7 @@ Some of the code is based on lukes maildeliverysystem. https://github.com/LukeWa
 
 ### Requirements:
 
+Your own way to open the backdoor of the truck
 Polyzone
 qtarget
 cd_drawtextui
