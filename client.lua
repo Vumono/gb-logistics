@@ -1,9 +1,12 @@
 local onJob = false
 local npcSpawned = false
 local notified = false
-local distancepayment = {}
-
-
+local jobfinished = false
+local started = false
+local total = 0
+local time = 0
+local price = 0
+local done = false
 Citizen.CreateThread(function()
     blip = AddBlipForCoord(929.0531, -1256.4288, 25.4806)
     SetBlipSprite(blip, 67)
@@ -75,11 +78,18 @@ RegisterNetEvent('gb-logistics:getJob',function()
     if onJob then
         exports['swt_notifications']:Warning('Job','Je bent al bezig met een job','top',2500,true)
     else
+    Clear()
+    started = false
     local hash = 'benson'
     RequestModel(hash)
     while not HasModelLoaded(hash) do Citizen.Wait(0) end
         if ESX.Game.IsSpawnPointClear(vector3(925.1420, -1242.2168, 25.4946), 10) then
             vehicle = CreateVehicle(hash,925.1420, -1242.2168, 25.4946,34.1494,true,false)
+            -------------vehiclekeyscript here--------------
+            local plate = GetVehicleNumberPlateText(vehicle)
+            if vehicle ~= nil then
+                TriggerServerEvent('hsn-hotwire:addKeys',plate)
+            end
             boxobject = CreateObject(300547451, 925.1420, -1242.2168, 26.4946, true, false)
                 exports.qtarget:AddTargetEntity(boxobject, {
                     options = {
@@ -104,52 +114,12 @@ RegisterNetEvent('gb-logistics:getJob',function()
 end)
 
 
-function EndDelivery(payment)
-    TriggerServerEvent('luke_maildelivery:Payment', payment)
-
-    TriggerEvent('nh-context:sendMenu', {
-        {
-            id = 0,
-            header = 'Job Complete',
-            txt = '',
-        },
-        {
-            id = 1,
-            header = 'Continue Working',
-            txt = 'Get another delivery location',
-            params = {
-                event = 'luke_maildelivery:EndDeliveryHandle',
-                args = true
-            }
-        },
-        {
-            id = 2,
-            header = 'Return To Depot',
-            txt = 'Return back to the depot and store the vehicle',
-            params = {
-                event = 'luke_maildelivery:EndDeliveryHandle',
-                args = false
-            }
-        }
-    })
-    exports.qtarget:RemoveTargetEntity(boxobject, {
-        'gb-logisticsbox'
-    })
-end
---[[
-RegisterServerEvent('gb-logisticspaymenttable')
-AddEventHandler("gb-logisticspaymenttable", function(x)
-    table.insert(distancepayment, source)
-end)]]
-
 
 function StartDelivery(DeliveryLocations)
+    Caldistance()
+    started = true
     Onjob = true
     local randomDelivery = Config.DeliveryLocations[math.random(#Config.DeliveryLocations)]
-    --[[
-    local pedcoords = GetEntityCoords(PlayerPedId())
-    local dist = #(pedcoords - randomDelivery)
-    table.insert(distancepayment, 1, dist)]]
 
     deliveryArea = CircleZone:Create(
         vector3(randomDelivery.x, randomDelivery.y, randomDelivery.z),
@@ -161,9 +131,9 @@ function StartDelivery(DeliveryLocations)
 
     deliveryZone = BoxZone:Create(
         vector3(randomDelivery.x, randomDelivery.y, randomDelivery.z),
-        3.0, 3.0, {
+        4.0, 4.0, {
         name = 'gb-logistics:Deliveryzone',
-        minZ = randomDelivery.z-1,
+        minZ = randomDelivery.z-2,
         maxZ = randomDelivery.z + 3,
         --debugPoly = true
     })
@@ -205,7 +175,8 @@ function StartDelivery(DeliveryLocations)
 
                         TriggerEvent('cd_drawtextui:HideUI')
 
-                        EndDelivery(vehiclePayment)
+                        jobfinished = true
+                        EndDelivery(price)
 
                         zoneCreated = false
                         insideDeliveryArea = false
@@ -235,46 +206,105 @@ RegisterNetEvent('gb-logistics:box',function()
 end)
 
 function EndDelivery(payment)
-    TriggerServerEvent('gb-logistics:Payment', payment)
+    if jobfinished then
+        TriggerServerEvent('gb-logistics:Payment',payment)
+        Clear()
+        started = false
 
-    TriggerEvent('nh-context:sendMenu', {
-        {
-            id = 0,
-            header = 'Job Complete',
-            txt = '',
-        },
-        {
-            id = 1,
-            header = 'Door gaan met werken',
-            txt = 'Krijg nog een bezorglocatie',
-            params = {
-                event = 'gb-logistics:EndDeliveryHandle',
-                args = true
+        TriggerEvent('nh-context:sendMenu', {
+            {
+                id = 0,
+                header = 'Job Complete',
+                txt = '',
+            },
+            {
+                id = 1,
+                header = 'Door gaan met werken',
+                txt = 'Krijg nog een bezorglocatie',
+                params = {
+                    event = 'gb-logistics:EndDeliveryHandle',
+                    args = true
+                }
+            },
+            {
+                id = 2,
+                header = 'Terug naar het depot',
+                txt = 'Ga terug naar het depot en lever het voertuig in',
+                params = {
+                    event = 'gb-logistics:EndDeliveryHandle',
+                    args = false
+                }
             }
-        },
-        {
-            id = 2,
-            header = 'Terug naar het depot',
-            txt = 'Ga terug naar het depot en lever het voertuig in',
-            params = {
-                event = 'gb-logistics:EndDeliveryHandle',
-                args = false
-            }
-        }
-    })
+        })
+        jobfinished = false
+    end
 end
 
 RegisterNetEvent('gb-logistics:EndDeliveryHandle')
 AddEventHandler('gb-logistics:EndDeliveryHandle', function(continue)
     if continue then
-        StartDelivery(DeliveryLocations)
+        StartDelivery()
     else
-        SetBlipRoute(blip, true)
+        done = true
         DeleteObject(boxobject)
     end
 end)
 
+Citizen.CreateThread(function()
+    while true do
+        Citizen.Wait(500)
+        if done == true then
+            ReturnBlip()
+            ReturnZone = BoxZone:Create(
+                vector3(Config.returnlocation.x, Config.returnlocation.y, Config.returnlocation.z),
+                6.0, 6.0, {
+                name = 'gb-logistics:returnzone',
+                minZ = Config.returnlocation.z-2,
+                maxZ = Config.returnlocation.z + 3,
+                --debugPoly = true
+            })
+            ReturnZone:onPlayerInOut(function(isPointInside, point)
+                insideReturn = isPointInside
+                if insideReturn then
+                    TriggerEvent('cd_drawtextui:ShowUI', 'show', '<b>Inleverpunt</b></p>Voertuig weg zetten')
+                    exports.qtarget:Vehicle({
+                        options = {
+                            {
+                                event = "gb-logistics:Deliverbackveh",
+                                icon = "fas fa-box-circle-check",
+                                label = "Voertuig wegzetten",
+                                num = 1
+                            },
+                        },
+                        distance = 2
+                    })
+                else
+                    
+                    TriggerEvent('cd_drawtextui:HideUI')
+                end
+            end)
+        end
+    end
+end)
+RegisterNetEvent('gb-logistics:Deliverbackveh',function()
+    local veh = GetVehiclePedIsIn(PlayerPedId(), true)
+    if veh == vehicle then
+    DeleteEntity(vehicle)
 
+    ReturnZone:destroy()
+
+    insideReturn = false
+
+    RemoveBlip(ReturnBlip)
+
+    TriggerEvent('cd_drawtextui:HideUI')
+
+    jobfinished = true
+    exports.qtarget:RemoveVehicle({
+        'Deliverbackveh'
+    })
+    end
+end)
 function DeliveryBlip(coords)
     if DoesBlipExist(deliveryBlip) then
         return
@@ -293,6 +323,19 @@ function DeliveryBlip(coords)
     end
 end
 
+function ReturnBlip()
+        ReturnBlip = AddBlipForCoord(Config.returnlocation.x, Config.returnlocation.y, Config.returnlocation.z)
+
+        SetBlipScale(ReturnBlip, 0.7)
+        SetBlipColour(ReturnBlip, 5)
+        SetBlipDisplay(ReturnBlip, 2)
+        SetBlipAsShortRange(ReturnBlip, false)
+        SetBlipRoute(ReturnBlip, true)
+
+        BeginTextCommandSetBlipName("STRING")
+        AddTextComponentString('Voertuig retourneren')
+        EndTextCommandSetBlipName(ReturnBlip)
+end
 
 Citizen.CreateThread(function()
     while true do
@@ -327,3 +370,31 @@ function AttachBox()
     boxModel = CreateObject(box, 0, 0, 0, true, true, false)
     AttachEntityToEntity(boxModel, playerPed, bone, 0.0, 0.0, -0.2, 90.0, 270.0, 90.0, 0.0, false, false, false, true, 2, true)
 end
+
+function Caldistance()
+    while true do
+        Citizen.Wait(50)
+        local player = PlayerPedId()
+        local plVehicle = GetLastDrivenVehicle(player)
+        if not started then
+                return
+        end
+        
+        time = time + 1
+        total = total + GetEntitySpeed(plVehicle) * 3.6
+        averageV = total / time
+
+        local distance = averageV * time / 3600 / 20
+
+        price = (Config.moneyperkm * distance + (time / 600 * 3))
+
+    end
+end
+
+function Clear()
+    total = 0
+    time = 0
+    price = 0
+    started = false
+end
+
