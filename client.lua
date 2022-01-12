@@ -382,7 +382,7 @@ function Caldistance()
 
         local distance = averageV * time / 3600 / 20
 
-        price = tostring(round((Config.moneyperkm * distance + (time / 600 * 3))))
+        price = (Config.moneyperkm * distance + (time / 600 * 3))
 
     end
 end
