@@ -7,11 +7,11 @@ Some of the code is based on lukes maildeliverysystem. https://github.com/LukeWa
 ### Requirements:
 
 
-Polyzone,
-qtarget,
-cd_drawtextui,
-swt_notifications,
-Your own way to open the backdoor of the truck
+* Polyzone,
+* qtarget,
+* cd_drawtextui,
+* swt_notifications,
+* Your own way to open the backdoor of the truck
 
 ### Plans:
 * Save distance per delivery in table and only get paid when you deliver back the vehicle.
