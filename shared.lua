@@ -1,6 +1,8 @@
 Config = {}
 
-Config.Payout = 500
+Config.moneyperkm = 30
+Config.returnlocation = vector3(870.5056, -1252.7745, 25.8486)
+
 Config.DeliveryLocations = {
     --vector3(x,y,z), -- Use this as a template if needed
     vector3(1130.5888671875,-981.81005859375,46.415851593018),
