@@ -5,8 +5,9 @@ local jobfinished = false
 local started = false
 local total = 0
 local time = 0
+local averageV = 0
 local price = 0
-local done = false
+
 Citizen.CreateThread(function()
     blip = AddBlipForCoord(929.0531, -1256.4288, 25.4806)
     SetBlipSprite(blip, 67)
@@ -69,7 +70,6 @@ AddEventHandler('gb-logistics:spawnNPC',function(coords,heading)
                     label = "End Shift",
                     }, 
                 },
-                    job = {"all"},
                     distance = 2.5
                 })      
 end)
@@ -107,6 +107,10 @@ RegisterNetEvent('gb-logistics:getJob',function()
             exports['swt_notifications']:Caption('Job geaccepteerd',"Ga naar de bezorgplaats",'top',5000,'blue-10','grey-1',true)
             StartDelivery()
 
+
+            started = true
+            Caldistance()
+
         else
             exports['swt_notifications']:Warning('voertuig','Wacht tot het gebied vrij is om een voertuig te spawnen','top',2500,true)
         end
@@ -116,8 +120,6 @@ end)
 
 
 function StartDelivery(DeliveryLocations)
-    Caldistance()
-    started = true
     Onjob = true
     local randomDelivery = Config.DeliveryLocations[math.random(#Config.DeliveryLocations)]
 
@@ -207,6 +209,7 @@ end)
 
 function EndDelivery(payment)
     if jobfinished then
+        print(payment)
         TriggerServerEvent('gb-logistics:Payment',payment)
         Clear()
         started = false
@@ -379,9 +382,13 @@ function Caldistance()
 
         local distance = averageV * time / 3600 / 20
 
-        price = (Config.moneyperkm * distance + (time / 600 * 3))
+        price = tostring(round((Config.moneyperkm * distance + (time / 600 * 3))))
 
     end
+end
+
+function round(n)
+    return n % 1 >= 0.5 and math.ceil(n) or math.floor(n)
 end
 
 function Clear()
