@@ -245,47 +245,40 @@ AddEventHandler('gb-logistics:EndDeliveryHandle', function(continue)
     if continue then
         StartDelivery()
     else
-        done = true
         DeleteObject(boxobject)
+        ReturnBlip()
+        ReturnZone = BoxZone:Create(
+            vector3(Config.returnlocation.x, Config.returnlocation.y, Config.returnlocation.z),
+            6.0, 6.0, {
+            name = 'gb-logistics:returnzone',
+            minZ = Config.returnlocation.z-2,
+            maxZ = Config.returnlocation.z + 3,
+            --debugPoly = true
+        })
+        ReturnZone:onPlayerInOut(function(isPointInside, point)
+            insideReturn = isPointInside
+            if insideReturn then
+                TriggerEvent('cd_drawtextui:ShowUI', 'show', '<b>Inleverpunt</b></p>Voertuig weg zetten')
+                exports.qtarget:Vehicle({
+                    options = {
+                        {
+                            event = "gb-logistics:Deliverbackveh",
+                            icon = "fas fa-box-circle-check",
+                            label = "Voertuig wegzetten",
+                            num = 1
+                        },
+                    },
+                    distance = 2
+                })
+            else
+                
+                TriggerEvent('cd_drawtextui:HideUI')
+            end
+        end)
+
     end
 end)
 
-Citizen.CreateThread(function()
-    while true do
-        Citizen.Wait(500)
-        if done == true then
-            ReturnBlip()
-            ReturnZone = BoxZone:Create(
-                vector3(Config.returnlocation.x, Config.returnlocation.y, Config.returnlocation.z),
-                6.0, 6.0, {
-                name = 'gb-logistics:returnzone',
-                minZ = Config.returnlocation.z-2,
-                maxZ = Config.returnlocation.z + 3,
-                --debugPoly = true
-            })
-            ReturnZone:onPlayerInOut(function(isPointInside, point)
-                insideReturn = isPointInside
-                if insideReturn then
-                    TriggerEvent('cd_drawtextui:ShowUI', 'show', '<b>Inleverpunt</b></p>Voertuig weg zetten')
-                    exports.qtarget:Vehicle({
-                        options = {
-                            {
-                                event = "gb-logistics:Deliverbackveh",
-                                icon = "fas fa-box-circle-check",
-                                label = "Voertuig wegzetten",
-                                num = 1
-                            },
-                        },
-                        distance = 2
-                    })
-                else
-                    
-                    TriggerEvent('cd_drawtextui:HideUI')
-                end
-            end)
-        end
-    end
-end)
 RegisterNetEvent('gb-logistics:Deliverbackveh',function()
     local veh = GetVehiclePedIsIn(PlayerPedId(), true)
     if veh == vehicle then
