@@ -1,6 +1,6 @@
 Config = {}
 
-Config.moneyperkm = 30
+Config.moneypermeter = 0.8
 Config.returnlocation = vector3(870.5056, -1252.7745, 25.8486)
 
 Config.DeliveryLocations = {
