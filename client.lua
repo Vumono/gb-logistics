@@ -2,11 +2,7 @@ local onJob = false
 local npcSpawned = false
 local notified = false
 local jobfinished = false
-local started = false
-local total = 0
-local time = 0
-local averageV = 0
-local price = 0
+
 
 Citizen.CreateThread(function()
     blip = AddBlipForCoord(929.0531, -1256.4288, 25.4806)
@@ -78,8 +74,6 @@ RegisterNetEvent('gb-logistics:getJob',function()
     if onJob then
         exports['swt_notifications']:Warning('Job','Je bent al bezig met een job','top',2500,true)
     else
-    Clear()
-    started = false
     local hash = 'benson'
     RequestModel(hash)
     while not HasModelLoaded(hash) do Citizen.Wait(0) end
@@ -108,8 +102,7 @@ RegisterNetEvent('gb-logistics:getJob',function()
             StartDelivery()
 
 
-            started = true
-            Caldistance()
+
 
         else
             exports['swt_notifications']:Warning('voertuig','Wacht tot het gebied vrij is om een voertuig te spawnen','top',2500,true)
@@ -122,6 +115,7 @@ end)
 function StartDelivery(DeliveryLocations)
     Onjob = true
     local randomDelivery = Config.DeliveryLocations[math.random(#Config.DeliveryLocations)]
+    local price = CalculateTravelDistanceBetweenPoints(randomdelivery, vector3(925.1420, -1242.2168, 25.4946))
 
     deliveryArea = CircleZone:Create(
         vector3(randomDelivery.x, randomDelivery.y, randomDelivery.z),
@@ -209,10 +203,7 @@ end)
 
 function EndDelivery(payment)
     if jobfinished then
-        print(payment)
         TriggerServerEvent('gb-logistics:Payment',payment)
-        Clear()
-        started = false
 
         TriggerEvent('nh-context:sendMenu', {
             {
@@ -367,34 +358,4 @@ function AttachBox()
     AttachEntityToEntity(boxModel, playerPed, bone, 0.0, 0.0, -0.2, 90.0, 270.0, 90.0, 0.0, false, false, false, true, 2, true)
 end
 
-function Caldistance()
-    while true do
-        Citizen.Wait(50)
-        local player = PlayerPedId()
-        local plVehicle = GetLastDrivenVehicle(player)
-        if not started then
-                return
-        end
-        
-        time = time + 1
-        total = total + GetEntitySpeed(plVehicle) * 3.6
-        averageV = total / time
-
-        local distance = averageV * time / 3600 / 20
-
-        price = (Config.moneyperkm * distance + (time / 600 * 3))
-
-    end
-end
-
-function round(n)
-    return n % 1 >= 0.5 and math.ceil(n) or math.floor(n)
-end
-
-function Clear()
-    total = 0
-    time = 0
-    price = 0
-    started = false
-end
 
