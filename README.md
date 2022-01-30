@@ -15,6 +15,7 @@ Some of the code is based on lukes maildeliverysystem. https://github.com/LukeWa
 * Your own way to open the backdoor of the truck
 
 ### Plans:
+* Have it working with ox_inventory stock so it adds stock real stock to the stores and the possibilty for stores to run out of stock
 * Save distance per delivery in table and only get paid when you deliver back the vehicle.
 * Doing it with friends
 * Choose route or single destination
