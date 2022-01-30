@@ -9,10 +9,10 @@ Citizen.CreateThread(function()
     SetBlipSprite(blip, 67)
     SetBlipDisplay(blip, 4)
     SetBlipScale(blip, 0.8)
-    SetBlipColour(blip, 4)
+    SetBlipColour(blip, 51)
     SetBlipAsShortRange(blip, true)
     BeginTextCommandSetBlipName("STRING")
-    AddTextComponentString("Logistics")
+    AddTextComponentString("logistics")
     EndTextCommandSetBlipName(blip)    
     while true do
         Citizen.Wait(1000)
@@ -61,9 +61,13 @@ AddEventHandler('gb-logistics:spawnNPC',function(coords,heading)
                     label = "Start Shift",
                     },                                         
                     {
-                    event = 'gb-logistics:endJob',
                     icon = "fas fa-clipboard",
                     label = "End Shift",
+                    action = function(entity)
+                        TriggerEvent('gb-logistics:EndDeliveryHandle', false)
+                        exports['swt_notifications']:Caption('Job',"Oke, prima zet de auto maar weer terug op de aangegeven locatie",'top',5000,'blue-10','grey-1',true)
+                        RemoveBlip(deliveryBlip)
+                    end
                     }, 
                 },
                     distance = 2.5
@@ -253,22 +257,28 @@ AddEventHandler('gb-logistics:EndDeliveryHandle', function(continue)
             insideReturn = isPointInside
             if insideReturn then
                 TriggerEvent('cd_drawtextui:ShowUI', 'show', '<b>Inleverpunt</b></p>Voertuig weg zetten')
-                        if Config.usedrawtext == true then
-                            if IsControlJustReleased(0, 38) then
-                                TriggerEvent('gb-logistics:Deliverbackveh')
-                            else
-                                exports.qtarget:Vehicle({
-                                    options = {
-                                        {
-                                            event = "gb-logistics:Deliverbackveh",
-                                            icon = "fas fa-box-circle-check",
-                                            label = "Voertuig wegzetten",
-                                            num = 1
-                                        },
-                                    },
-                                    distance = 2
-                                })
-                             end
+                if Config.usedrawtext == true then
+                    if IsControlJustReleased(0, 38) then
+                        TriggerEvent('gb-logistics:Deliverbackveh')
+                    end
+                else
+                    exports.qtarget:Vehicle({
+                        options = {
+                            {
+                                event = "gb-logistics:Deliverbackveh",
+                                icon = "fas fa-box-circle-check",
+                                label = "Voertuig wegzetten",
+                                canInteract = function(entity)
+                                    if insideReturn then
+                                        return true
+                                    end
+                                    return false
+                                end
+                            },
+                        },
+                        distance = 2
+                    })
+                end
             else
                 
                 TriggerEvent('cd_drawtextui:HideUI')
@@ -310,7 +320,7 @@ function DeliveryBlip(coords)
         SetBlipRoute(deliveryBlip, true)
 
         BeginTextCommandSetBlipName("STRING")
-        AddTextComponentString('Package delivery location')
+        AddTextComponentString('Afleverpunt')
         EndTextCommandSetBlipName(deliveryBlip)
     end
 end
@@ -362,5 +372,3 @@ function AttachBox()
     boxModel = CreateObject(box, 0, 0, 0, true, true, false)
     AttachEntityToEntity(boxModel, playerPed, bone, 0.0, 0.0, -0.2, 90.0, 270.0, 90.0, 0.0, false, false, false, true, 2, true)
 end
-
-
