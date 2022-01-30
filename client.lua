@@ -253,17 +253,22 @@ AddEventHandler('gb-logistics:EndDeliveryHandle', function(continue)
             insideReturn = isPointInside
             if insideReturn then
                 TriggerEvent('cd_drawtextui:ShowUI', 'show', '<b>Inleverpunt</b></p>Voertuig weg zetten')
-                exports.qtarget:Vehicle({
-                    options = {
-                        {
-                            event = "gb-logistics:Deliverbackveh",
-                            icon = "fas fa-box-circle-check",
-                            label = "Voertuig wegzetten",
-                            num = 1
-                        },
-                    },
-                    distance = 2
-                })
+                        if Config.usedrawtext == true then
+                            if IsControlJustReleased(0, 38) then
+                                TriggerEvent('gb-logistics:Deliverbackveh')
+                            else
+                                exports.qtarget:Vehicle({
+                                    options = {
+                                        {
+                                            event = "gb-logistics:Deliverbackveh",
+                                            icon = "fas fa-box-circle-check",
+                                            label = "Voertuig wegzetten",
+                                            num = 1
+                                        },
+                                    },
+                                    distance = 2
+                                })
+                             end
             else
                 
                 TriggerEvent('cd_drawtextui:HideUI')
