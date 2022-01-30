@@ -2,6 +2,7 @@ Config = {}
 
 Config.moneypermeter = 0.8 --if you make the amount a lot higher, also change the max amount in server.lua
 Config.returnlocation = vector3(870.5056, -1252.7745, 25.8486)
+Config.usedrawtext = true -- if false, put away vehicle when done with qtarget
 
 Config.DeliveryLocations = {
     --vector3(x,y,z), -- Use this as a template if needed
